@@ -176,7 +176,7 @@ Before launching ralph, ensure the project is properly configured:
 
 ### Generate Ralph Configuration
 
-If PROMPT.md doesn't exist, create it based on the specifications:
+If PROMPT.md doesn't exist, create it based on the specifications with **TDD workflow**:
 
 ```markdown
 # Project: [PROJECT_NAME]
@@ -184,26 +184,68 @@ If PROMPT.md doesn't exist, create it based on the specifications:
 ## Overview
 [Brief description from ideation phase]
 
-## Objectives
-[List of main objectives]
-
 ## Technical Stack
 [Technologies being used]
 
-## Current Priority
-Focus on completing the beads issues in priority order. Use `bd ready` to find the next available task.
+## TDD Workflow (Red-Green-Refactor)
 
-## Workflow
-1. Check `bd ready --json` for the next available task
-2. Work on the highest priority unblocked task
-3. Update task status: `bd update TASK_ID --status in_progress`
-4. When complete: `bd close TASK_ID --reason "Completed: brief description"`
-5. Repeat until all tasks are done
+You are operating in strict TDD mode. For EVERY task, follow this cycle:
+
+### 1. Get Next Task
+```bash
+bd ready --json | jq -r '.[0]'
+bd update TASK_ID --status in_progress
+```
+
+### 2. 🔴 RED - Write Failing Test
+
+**Before writing ANY implementation code:**
+1. Analyze the task requirements
+2. Write a test that specifies the expected behavior
+3. Run the test - it MUST fail
+
+```bash
+npm test -- --testPathPattern="feature"  # or pytest, cargo test, etc.
+```
+
+**Do NOT proceed until you have a failing test!**
+
+### 3. 🟢 GREEN - Make It Pass
+
+Write the MINIMUM code to make the test pass:
+- No extra features
+- No premature optimization
+- Just enough to turn red to green
+
+Run test again - it MUST pass now.
+
+### 4. 🔵 REFACTOR - Improve the Code
+
+Now that tests are green, improve the code:
+- Extract reusable functions/components
+- Remove duplication
+- Improve naming
+- Run tests after EVERY change - must stay green!
+
+### 5. Close Task
+```bash
+bd close TASK_ID --reason "TDD complete: [description]"
+```
+
+### 6. Repeat with next task
+
+## TDD Rules (Non-Negotiable)
+
+1. **Never write implementation before test**
+2. **Tests must fail first**
+3. **Minimal implementation only**
+4. **Refactor only when green**
+5. **Small increments**
 
 ## Exit Conditions
 - All beads issues are closed
-- Tests pass
-- Documentation is updated
+- All tests pass
+- Code has been refactored
 ```
 
 ### Generate @fix_plan.md
@@ -221,18 +263,23 @@ bd ready --json | jq -r '.[] | "- [ ] \(.id): \(.title) (P\(.priority))"' >> @fi
 
 ### Launch Ralph
 
-Once everything is configured, launch ralph:
+Once everything is configured, **IMPORTANT**: Reset session and launch with `--no-continue` to prevent Ralph from inheriting this conversation's context:
 
 ```bash
+# First, reset session to prevent context pollution
+ralph --reset-session
+
 # Option 1: With tmux monitoring (recommended for visibility)
-ralph --monitor
+ralph --monitor --no-continue
 
 # Option 2: Simple mode
-ralph
+ralph --no-continue
 
 # Option 3: With custom settings
-ralph --monitor --calls 50 --timeout 30
+ralph --monitor --no-continue --calls 50 --timeout 30
 ```
+
+> **Why `--no-continue`?** Without this flag, Ralph would inherit the context from this slash command conversation and might repeat the ideation/beads creation process instead of working on PROMPT.md tasks.
 
 ### Post-Launch Guidance
 
@@ -292,8 +339,10 @@ bd ready                   # Show ready work
 bd list                    # List all issues
 bd close ID --reason "why" # Close issue
 
-# Ralph commands
-ralph --monitor           # Start with monitoring
-ralph --status            # Check status
-ralph-monitor             # Live dashboard
+# Ralph commands (always use --no-continue after slash commands!)
+ralph --reset-session      # Reset before launching
+ralph --monitor --no-continue  # Start fresh with monitoring
+ralph --no-continue        # Start fresh simple mode
+ralph --status             # Check status
+ralph-monitor              # Live dashboard
 ```

@@ -1,16 +1,73 @@
 # beads-in-ralph
 
-> Orchestrate autonomous development with beads issue tracking and ralph execution loops
+> Orchestrate autonomous TDD development with beads issue tracking and ralph execution loops
 
-Custom slash commands for Claude Code that integrate **beads** (issue tracking) and **ralph** (autonomous development loop) into a seamless workflow.
+## TDD Workflow (Default)
+
+Ralph operates in strict **Test-Driven Development** mode. For every bead task, it follows the Red-Green-Refactor cycle:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TDD RALPH WORKFLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐                                               │
+│  │  Bead Task   │  ← Feature requirement from beads             │
+│  └──────┬───────┘                                               │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌──────────────────────────────────────────┐                   │
+│  │       🔴 RED - Write Failing Test        │                   │
+│  │  • Write test for the feature            │                   │
+│  │  • Run test - MUST fail                  │                   │
+│  │  • No implementation code yet!           │                   │
+│  └────────────────────┬─────────────────────┘                   │
+│                       │                                         │
+│                       ▼                                         │
+│  ┌──────────────────────────────────────────┐                   │
+│  │      🟢 GREEN - Make It Pass             │                   │
+│  │  • Write MINIMAL code to pass            │                   │
+│  │  • No extra features                     │                   │
+│  │  • Run test - MUST pass                  │                   │
+│  └────────────────────┬─────────────────────┘                   │
+│                       │                                         │
+│                       ▼                                         │
+│  ┌──────────────────────────────────────────┐                   │
+│  │      🔵 REFACTOR - Improve Code          │                   │
+│  │  • Extract reusable components           │                   │
+│  │  • Remove duplication                    │                   │
+│  │  • Run test - MUST stay green            │                   │
+│  └────────────────────┬─────────────────────┘                   │
+│                       │                                         │
+│                       ▼                                         │
+│              Close bead → Next task                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## What's Included
 
 | Command | Description |
 |---------|-------------|
-| `/project:ideate-and-build` | Full workflow: iterate on ideas, create beads, launch ralph |
-| `/project:specs-to-ralph` | Convert existing specs to beads and launch ralph |
+| `/project:ideate-and-build` | Iterate on ideas, create beads, launch ralph with TDD |
+| `/project:specs-to-ralph` | Convert specs to beads and launch ralph with TDD |
 | `/project:workflow-status` | Check status of beads and ralph |
+
+## ⚠️ Session Isolation
+
+### Slash Commands Handle This Automatically
+
+The commands automatically launch Ralph with `--reset-session` and `--no-continue` flags to prevent session pollution.
+
+### Manual Claude Usage Warning
+
+**Do NOT run `claude` manually in a directory where Ralph is running.**
+
+If you must, reset before starting Ralph:
+```bash
+ralph --reset-session
+ralph --monitor --no-continue
+```
 
 ## Installation
 
@@ -128,13 +185,10 @@ See where things stand:
 │           ▼                                                     │
 │  ┌──────────────────────────────────────────┐                  │
 │  │         PHASE 1: IDEATION                │                  │
-│  │  ┌────────────────────────────────────┐  │                  │
-│  │  │ • Understand core vision           │  │                  │
-│  │  │ • Define scope & boundaries        │◄─┼──┐ Iterate      │
-│  │  │ • Break down into components       │  │  │ until        │
-│  │  │ • Identify tech requirements       │──┼──┘ specs are    │
-│  │  │ • Define acceptance criteria       │  │    finalized    │
-│  │  └────────────────────────────────────┘  │                  │
+│  │  • Understand core vision                │                  │
+│  │  • Define scope & boundaries             │◄──┐ Iterate      │
+│  │  • Break down into components            │   │ until        │
+│  │  • Identify tech requirements            │───┘ finalized    │
 │  └────────────────────┬─────────────────────┘                  │
 │                       │                                         │
 │           User says "ready to build"                           │
@@ -142,37 +196,29 @@ See where things stand:
 │                       ▼                                         │
 │  ┌──────────────────────────────────────────┐                  │
 │  │         PHASE 2: BEADS                   │                  │
-│  │  ┌────────────────────────────────────┐  │                  │
-│  │  │ • Initialize beads (bd init)       │  │                  │
-│  │  │ • Create epic (if applicable)      │  │                  │
-│  │  │ • Create tasks with priorities     │  │                  │
-│  │  │ • Add dependencies                 │  │                  │
-│  │  │ • Verify with bd ready             │  │                  │
-│  │  └────────────────────────────────────┘  │                  │
+│  │  • Initialize beads (bd init)            │                  │
+│  │  • Create epic and tasks                 │                  │
+│  │  • Add dependencies                      │                  │
 │  └────────────────────┬─────────────────────┘                  │
 │                       │                                         │
 │           User confirms "launch ralph"                          │
 │                       │                                         │
 │                       ▼                                         │
 │  ┌──────────────────────────────────────────┐                  │
-│  │         PHASE 3: RALPH                   │                  │
+│  │       PHASE 3: RALPH TDD LOOP            │                  │
+│  │                                          │                  │
+│  │  For each bead task:                     │                  │
 │  │  ┌────────────────────────────────────┐  │                  │
-│  │  │ • Generate PROMPT.md               │  │                  │
-│  │  │ • Generate @fix_plan.md            │  │                  │
-│  │  │ • Launch: ralph --monitor          │  │                  │
-│  │  └────────────────────────────────────┘  │                  │
-│  └────────────────────┬─────────────────────┘                  │
-│                       │                                         │
-│                       ▼                                         │
-│  ┌──────────────────────────────────────────┐                  │
-│  │       AUTONOMOUS DEVELOPMENT LOOP        │                  │
-│  │  ┌────────────────────────────────────┐  │                  │
-│  │  │ ralph loop:                        │  │                  │
-│  │  │  1. bd ready → get next task       │  │                  │
-│  │  │  2. bd update → mark in_progress   │◄─┼──┐               │
-│  │  │  3. Execute Claude Code            │  │  │ Repeat       │
-│  │  │  4. bd close → mark complete       │──┼──┘ until done   │
-│  │  └────────────────────────────────────┘  │                  │
+│  │  │ 🔴 RED: Write failing test         │  │                  │
+│  │  │         ↓                          │  │                  │
+│  │  │ 🟢 GREEN: Write minimal code       │  │                  │
+│  │  │         ↓                          │  │                  │
+│  │  │ 🔵 REFACTOR: Improve while green   │  │                  │
+│  │  │         ↓                          │  │                  │
+│  │  │ ✅ Close bead                      │◄─┼──┐ Repeat       │
+│  │  └────────────────────────────────────┘  │  │ until done   │
+│  │                    │                     │  │               │
+│  │                    └─────────────────────┼──┘               │
 │  └────────────────────┬─────────────────────┘                  │
 │                       │                                         │
 │                       ▼                                         │
@@ -195,17 +241,24 @@ See where things stand:
 - Tasks are created with appropriate priorities (P0-P3)
 - Dependencies are automatically linked
 
-### During Ralph Execution
-- Ralph runs autonomously in tmux
+### During TDD Execution
+- Ralph runs autonomously in tmux following Red-Green-Refactor
+- Each task gets a failing test BEFORE any implementation
 - Use `Ctrl+B` then `D` to detach (keeps ralph running)
 - Use `tmux attach` to reattach
 - Check progress with `bd ready` or `ralph --status`
+
+### TDD Best Practices
+- **Small tests**: One behavior per test
+- **Descriptive names**: Test names should describe expected behavior
+- **Fast feedback**: Tests should run quickly
+- **Independent**: Tests shouldn't depend on each other
 
 ### Discovered Work
 When ralph discovers new work during execution, it will:
 1. Create a new bead: `bd create "new task" -t task -p 2`
 2. Link it: `bd dep add NEW_ID CURRENT_ID --type discovered-from`
-3. Continue working
+3. Continue with TDD cycle for the new task
 
 ## Troubleshooting
 
@@ -227,6 +280,33 @@ Run `bd init` in your project directory.
 
 ### Ralph exits immediately
 Check PROMPT.md and @fix_plan.md exist. Use `/project:workflow-status` to diagnose.
+
+### Ralph keeps checking its own status / stuck in loop
+This is caused by **session pollution**. Ralph inherited context from a manual `claude` session.
+
+**Fix:**
+```bash
+# Kill all tmux sessions
+tmux kill-server
+
+# Reset Ralph completely
+ralph --reset-circuit
+ralph --reset-session
+
+# Start fresh
+ralph --monitor
+```
+
+**Prevention:** Don't run `claude` manually in Ralph project directories. See the Session Isolation warning above.
+
+### Circuit breaker opens but Ralph completed tasks
+The circuit breaker may not detect progress if `.beads/` is in `.gitignore`. As of v1.1.0, Ralph now tracks beads task completion in addition to git changes.
+
+**Fix:**
+```bash
+ralph --reset-circuit
+ralph --monitor
+```
 
 ## License
 

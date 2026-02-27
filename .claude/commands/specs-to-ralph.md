@@ -84,7 +84,7 @@ bd dep add $DEPENDENT_TASK_ID $BLOCKER_TASK_ID --type blocks
 
 ## Step 4: Generate Ralph Files
 
-### Create/Update PROMPT.md
+### Create/Update PROMPT.md (TDD Workflow)
 
 ```bash
 cat > PROMPT.md << 'EOF'
@@ -93,40 +93,74 @@ cat > PROMPT.md << 'EOF'
 ## Overview
 PROJECT_DESCRIPTION
 
-## Workflow with Beads
+## TDD Workflow (Red-Green-Refactor)
 
-This project uses beads (bd) for task tracking. Follow this workflow:
+You are operating in strict TDD mode. For EVERY task, follow this cycle:
 
-1. **Find Ready Work**
-   ```bash
-   bd ready --json
-   ```
-   Pick the highest priority unblocked task.
+### 1. Get Next Task
+```bash
+bd ready --json | jq -r '.[0]'
+bd update TASK_ID --status in_progress
+```
 
-2. **Start Working**
-   ```bash
-   bd update TASK_ID --status in_progress
-   ```
+### 2. 🔴 RED - Write Failing Test
 
-3. **Complete Task**
-   ```bash
-   bd close TASK_ID --reason "Description of what was done"
-   ```
+**Before writing ANY implementation code:**
+1. Analyze the task requirements
+2. Write a test that specifies the expected behavior
+3. Run the test - it MUST fail
 
-4. **Check for New Work**
-   Repeat from step 1.
+```bash
+npm test -- --testPathPattern="feature"  # or pytest, cargo test, etc.
+```
+
+**Do NOT proceed until you have a failing test!**
+
+### 3. 🟢 GREEN - Make It Pass
+
+Write the MINIMUM code to make the test pass:
+- No extra features
+- No premature optimization
+- Just enough to turn red to green
+
+Run test again - it MUST pass now.
+
+### 4. 🔵 REFACTOR - Improve the Code
+
+Now that tests are green, improve the code:
+- Extract reusable functions/components
+- Remove duplication
+- Improve naming
+- Run tests after EVERY change - must stay green!
+
+### 5. Close Task
+```bash
+bd close TASK_ID --reason "TDD complete: [description]"
+```
+
+### 6. Repeat with next task
+
+## TDD Rules (Non-Negotiable)
+
+1. **Never write implementation before test**
+2. **Tests must fail first**
+3. **Minimal implementation only**
+4. **Refactor only when green**
+5. **Small increments**
+
+## Discovering New Work
+
+If you discover additional work needed:
+```bash
+bd create "title" -t task -p 2
+bd dep add NEW_ID CURRENT_ID --type discovered-from
+```
 
 ## Exit Conditions
 
 - All beads issues are closed
-- Tests pass (if applicable)
-- Code compiles/runs successfully
-
-## Notes
-
-- Always update beads status before and after working on a task
-- If you discover new work, create a new bead: `bd create "title" -t task -p 2`
-- Link discovered work: `bd dep add NEW_ID CURRENT_ID --type discovered-from`
+- All tests pass
+- Code has been refactored
 EOF
 ```
 
@@ -171,19 +205,25 @@ bd ready
 Ask the user before launching:
 
 > "I've created the following issues in beads:
-> 
+>
 > [Summary of created issues]
-> 
+>
 > Ready to launch ralph? Options:
-> 1. `ralph --monitor` - With tmux monitoring (recommended)
-> 2. `ralph` - Simple mode
+> 1. Launch ralph with monitoring (recommended)
+> 2. Launch ralph simple mode
 > 3. Don't launch yet - I'll review first"
 
-If user confirms, launch:
+If user confirms, **IMPORTANT**: Reset session and launch with `--no-continue` to prevent Ralph from inheriting this conversation's context:
 
 ```bash
-ralph --monitor
+# Reset session to prevent Ralph from inheriting this slash command context
+ralph --reset-session
+
+# Launch with --no-continue to start fresh
+ralph --monitor --no-continue
 ```
+
+> **Note**: The `--no-continue` flag is critical here. Without it, Ralph would inherit the context from this conversation and might keep trying to create beads instead of working on the PROMPT.md tasks.
 
 ## Quick Reference
 
@@ -197,7 +237,8 @@ bd dep tree EPIC_ID
 cat PROMPT.md
 cat @fix_plan.md
 
-# Launch ralph
-ralph --monitor
-ralph --status
+# Launch ralph (always use --no-continue after slash commands!)
+ralph --reset-session           # Reset before launching
+ralph --monitor --no-continue   # Start fresh with monitoring
+ralph --status                  # Check status
 ```
